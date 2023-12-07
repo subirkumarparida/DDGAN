@@ -1,3 +1,4 @@
+# Clone of https://github.com/NVlabs/denoising-diffusion-gan
 # Official PyTorch implementation of "Tackling the Generative Learning Trilemma with Denoising Diffusion GANs" [(ICLR 2022 Spotlight Paper)](https://arxiv.org/abs/2112.07804) #
 
 <div align="center">
