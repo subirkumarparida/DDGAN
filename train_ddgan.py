@@ -147,7 +147,7 @@ class Posterior_Coefficients():
         
         self.posterior_log_variance_clipped = torch.log(self.posterior_variance.clamp(min=1e-20))
         
-def sample_posterior(coefficients, x_0,x_t, t):
+def sample_posterior(coefficients, x_0, x_t, t):
     
     def q_posterior(x_0, x_t, t):
         mean = (
@@ -262,8 +262,8 @@ def train(rank, gpu, args):
                                    t_emb_dim = args.t_emb_dim,
                                    act=nn.LeakyReLU(0.2)).to(device)
     
-    broadcast_params(netG.parameters())
-    broadcast_params(netD.parameters())
+    #broadcast_params(netG.parameters())
+    #broadcast_params(netD.parameters())
     
     optimizerD = optim.Adam(netD.parameters(), lr=args.lr_d, betas = (args.beta1, args.beta2))
     
@@ -278,8 +278,8 @@ def train(rank, gpu, args):
     
     
     #ddp
-    netG = nn.parallel.DistributedDataParallel(netG, device_ids=[gpu])
-    netD = nn.parallel.DistributedDataParallel(netD, device_ids=[gpu])
+    #netG = nn.parallel.DistributedDataParallel(netG, device_ids=[gpu])
+    #netD = nn.parallel.DistributedDataParallel(netD, device_ids=[gpu])
 
     
     exp = args.exp
@@ -462,13 +462,13 @@ def train(rank, gpu, args):
 
 def init_processes(rank, size, fn, args):
     """ Initialize the distributed environment. """
-    os.environ['MASTER_ADDR'] = args.master_address
-    os.environ['MASTER_PORT'] = '6020'
+    #os.environ['MASTER_ADDR'] = args.master_address
+    #os.environ['MASTER_PORT'] = '6020'
     torch.cuda.set_device(args.local_rank)
     gpu = args.local_rank
-    dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
+    #dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
     fn(rank, gpu, args)
-    dist.barrier()
+    #dist.barrier()
     cleanup()  
 
 def cleanup():
