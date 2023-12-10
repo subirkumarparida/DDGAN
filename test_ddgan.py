@@ -129,7 +129,7 @@ def sample_from_model(coefficients, generator, n_time, x_init, T, opt):
 #%%
 def sample_and_test(args):
     torch.manual_seed(42)
-    device = 'cuda:0'
+    device = 'cuda:1'
     
     if args.dataset == 'cifar10':
         real_img_dir = 'pytorch_fid/cifar10_train_stat.npy'
@@ -185,7 +185,7 @@ def sample_and_test(args):
         x_t_1 = torch.randn(args.batch_size, args.num_channels,args.image_size, args.image_size).to(device)
         fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1,T,  args)
         fake_sample = to_range_0_1(fake_sample)
-        torchvision.utils.save_image(fake_sample, './samples_{}.jpg'.format(args.dataset))
+        torchvision.utils.save_image(fake_sample, './generated_samples/{}.jpg'.format(args.dataset))
 
     
     
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('ddgan parameters')
     parser.add_argument('--seed', type=int, default=1024,
                         help='seed used for initialization')
-    parser.add_argument('--compute_fid', action='store_true', default=False,
+    parser.add_argument('--compute_fid', action='store_true', default=True,
                             help='whether or not compute FID')
     parser.add_argument('--epoch_id', type=int,default=1000)
     parser.add_argument('--num_channels', type=int, default=3,
