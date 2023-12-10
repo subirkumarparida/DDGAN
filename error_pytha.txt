@@ -1,0 +1,81 @@
+(env_torch) subir@pytha:~/Documents/DDGAN$ python3 test_ddgan.py --dataset cifar10 --exp ddgan_cifar10_exp1 --num_channels 3 --num_channels_dae 128 --num_timesteps 4 --num_res_blocks 2 --nz 100 --z_emb_dim 256 --n_mlp 4 --ch_mult 1 2 2 2 --epoch_id 25
+generating batch  0
+generating batch  1
+generating batch  2
+generating batch  3
+generating batch  4
+generating batch  5
+generating batch  6
+generating batch  7
+generating batch  8
+generating batch  9
+generating batch  10
+generating batch  11
+generating batch  12
+generating batch  13
+generating batch  14
+generating batch  15
+generating batch  16
+Traceback (most recent call last):
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 272, in <module>
+    sample_and_test(args)
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 171, in sample_and_test
+    fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1,T,  args)
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 123, in sample_from_model
+    x_0 = generator(x, t_time, latent_z)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/ncsnpp_generator_adagn.py", line 344, in forward
+    input_pyramid = modules[m_idx](input_pyramid)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/layerspp.py", line 194, in forward
+    x = self.Conv2d_0(x)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/up_or_down_sampling.py", line 54, in forward
+    x = conv_downsample_2d(x, self.weight, k=self.resample_kernel)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/up_or_down_sampling.py", line 183, in conv_downsample_2d
+    return F.conv2d(x, w, stride=s, padding=0)
+RuntimeError: cuDNN error: CUDNN_STATUS_MAPPING_ERROR
+(env_torch) subir@pytha:~/Documents/DDGAN$ vi test_ddgan.py
+(env_torch) subir@pytha:~/Documents/DDGAN$ python3 test_ddgan.py --dataset cifar10 --exp ddgan_cifar10_exp1 --num_channels 3 --num_channels_dae 128 --num_timesteps 4 --num_res_blocks 2 --nz 100 --z_emb_dim 256 --n_mlp 4 --ch_mult 1 2 2 2 --epoch_id 1200
+generating batch  0
+generating batch  1
+generating batch  2
+generating batch  3
+generating batch  4
+generating batch  5
+generating batch  6
+generating batch  7
+generating batch  8
+generating batch  9
+generating batch  10
+generating batch  11
+generating batch  12
+generating batch  13
+generating batch  14
+generating batch  15
+generating batch  16
+Traceback (most recent call last):
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 272, in <module>
+    sample_and_test(args)
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 171, in sample_and_test
+    fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1,T,  args)
+  File "/nfs4/subir/Documents/DDGAN/test_ddgan.py", line 123, in sample_from_model
+    x_0 = generator(x, t_time, latent_z)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/ncsnpp_generator_adagn.py", line 344, in forward
+    input_pyramid = modules[m_idx](input_pyramid)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/layerspp.py", line 194, in forward
+    x = self.Conv2d_0(x)
+  File "/nfs4/subir/miniconda3/envs/env_torch/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1110, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/up_or_down_sampling.py", line 54, in forward
+    x = conv_downsample_2d(x, self.weight, k=self.resample_kernel)
+  File "/nfs4/subir/Documents/DDGAN/score_sde/models/up_or_down_sampling.py", line 183, in conv_downsample_2d
+    return F.conv2d(x, w, stride=s, padding=0)
+RuntimeError: cuDNN error: CUDNN_STATUS_MAPPING_ERROR
