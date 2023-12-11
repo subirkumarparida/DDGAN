@@ -18,11 +18,10 @@ import torch.optim as optim
 import torchvision
 
 import torchvision.transforms as transforms
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import ImageFolder, CIFAR10
 from datasets_prep.lsun import LSUN
 from datasets_prep.stackmnist_data import StackedMNIST, _data_transforms_stacked_mnist
 from datasets_prep.lmdb_datasets import LMDBDataset
-
 
 from torch.multiprocessing import Process
 import torch.distributed as dist
@@ -235,7 +234,8 @@ def train(rank, gpu, args):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
             ])
-        dataset = LMDBDataset(root='/datasets/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
+        #dataset = LMDBDataset(root='./data/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
+        dataset = ImageFolder(root='./data/celebahq256_imgs/train', transform=train_transform)
       
     
     
@@ -425,7 +425,7 @@ def train(rank, gpu, args):
             global_step += 1
             if iteration % 100 == 0:
                 if rank == 0:
-                    print('epoch {} iteration{}, G Loss: {}, D Loss: {}'.format(epoch,iteration, errG.item(), errD.item()))
+                    print('epoch {} iteration {}, G Loss: {}, D Loss: {}'.format(epoch,iteration, errG.item(), errD.item()))
         
         if not args.no_lr_decay:
             
