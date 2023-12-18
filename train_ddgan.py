@@ -27,6 +27,8 @@ from torch.multiprocessing import Process
 #import torch.distributed as dist
 import shutil
 
+#os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+
 def copy_source(file, output_dir):
     shutil.copyfile(file, os.path.join(output_dir, os.path.basename(file)))
             
@@ -236,6 +238,15 @@ def train(rank, gpu, args):
             ])
         #dataset = LMDBDataset(root='./data/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
         dataset = ImageFolder(root='./data/celebahq256_imgs/train', transform=train_transform)
+
+    elif args.dataset == 'fairface_224':
+        train_transform = transforms.Compose([
+                transforms.Resize(args.image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
+            ])
+        dataset = ImageFolder(root='./data/fairface', transform=train_transform)
         
     
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
@@ -273,7 +284,6 @@ def train(rank, gpu, args):
     
     schedulerG = torch.optim.lr_scheduler.CosineAnnealingLR(optimizerG, args.num_epoch, eta_min=1e-5)
     schedulerD = torch.optim.lr_scheduler.CosineAnnealingLR(optimizerD, args.num_epoch, eta_min=1e-5)
-    
     
     
     #ddp
@@ -335,7 +345,6 @@ def train(rank, gpu, args):
             for p in netD.parameters():  
                 p.requires_grad = True  
         
-            
             netD.zero_grad()
             
             #sample from p(x_0)
@@ -345,8 +354,7 @@ def train(rank, gpu, args):
             t = torch.randint(0, args.num_timesteps, (real_data.size(0),), device=device)
             
             x_t, x_tp1 = q_sample_pairs(coeff, real_data, t)
-            x_t.requires_grad = True
-            
+            x_t.requires_grad = True    
     
             # train with real
             D_real = netD(x_t, t, x_tp1.detach()).view(-1)
@@ -416,8 +424,6 @@ def train(rank, gpu, args):
             latent_z = torch.randn(batch_size, nz,device=device)
             
             
-                
-           
             x_0_predict = netG(x_tp1.detach(), t, latent_z)
             x_pos_sample = sample_posterior(pos_coeff, x_0_predict, x_tp1, t)
             
@@ -431,14 +437,12 @@ def train(rank, gpu, args):
             optimizerG.step()
                 
            
-            
             global_step += 1
             if iteration % 100 == 0:
                 if rank == 0:
                     print('epoch {} iteration {}, G Loss: {}, D Loss: {}'.format(epoch,iteration, errG.item(), errD.item()))
         
-        if not args.no_lr_decay:
-            
+        if not args.no_lr_decay:            
             schedulerG.step()
             schedulerD.step()
         
@@ -608,5 +612,3 @@ if __name__ == '__main__':
         print('starting in debug mode')
         
         init_processes(0, size, train, args)
-   
-                
