@@ -21,10 +21,10 @@ import torchvision.transforms as transforms
 from torchvision.datasets import ImageFolder, CIFAR10
 from datasets_prep.lsun import LSUN
 from datasets_prep.stackmnist_data import StackedMNIST, _data_transforms_stacked_mnist
-from datasets_prep.lmdb_datasets import LMDBDataset
+#from datasets_prep.lmdb_datasets import LMDBDataset
 
 from torch.multiprocessing import Process
-import torch.distributed as dist
+#import torch.distributed as dist
 import shutil
 
 def copy_source(file, output_dir):
@@ -236,8 +236,7 @@ def train(rank, gpu, args):
             ])
         #dataset = LMDBDataset(root='./data/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
         dataset = ImageFolder(root='./data/celebahq256_imgs/train', transform=train_transform)
-      
-    
+        
     
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=args.world_size,
@@ -285,7 +284,7 @@ def train(rank, gpu, args):
     exp = args.exp
     parent_dir = "./saved_info/dd_gan/{}".format(args.dataset)
 
-    exp_path = os.path.join(parent_dir,exp)
+    exp_path = os.path.join(parent_dir, exp)
     if rank == 0:
         if not os.path.exists(exp_path):
             os.makedirs(exp_path)
@@ -298,7 +297,7 @@ def train(rank, gpu, args):
     T = get_time_schedule(args, device)
     
     if args.resume:
-        checkpoint_file = os.path.join(exp_path, 'content.pth')
+        checkpoint_file = os.path.join(exp_path, 'saved_pth/content.pth')
         checkpoint = torch.load(checkpoint_file, map_location=device)
         init_epoch = checkpoint['epoch']
         epoch = init_epoch
@@ -317,7 +316,18 @@ def train(rank, gpu, args):
     else:
         global_step, epoch, init_epoch = 0, 0, 0
     
-    
+    saved_pth = os.path.join(exp_path, 'saved_pth')
+    if not os.path.exists(saved_pth):
+        os.makedirs(saved_pth)
+        
+    sample_dir = os.path.join(exp_path, 'gen_sample')
+    if not os.path.exists(sample_dir):
+        os.makedirs(sample_dir)
+        
+    xpos_dir = os.path.join(exp_path, 'xpos')
+    if not os.path.exists(xpos_dir):
+        os.makedirs(xpos_dir)
+        
     for epoch in range(init_epoch, args.num_epoch+1):
         train_sampler.set_epoch(epoch)
        
@@ -434,27 +444,27 @@ def train(rank, gpu, args):
         
         if rank == 0:
             if epoch % 10 == 0:
-                torchvision.utils.save_image(x_pos_sample, os.path.join(exp_path, 'xpos_epoch_{}.png'.format(epoch)), normalize=True)
+                torchvision.utils.save_image(x_pos_sample, os.path.join(xpos_dir, 'xpos_epoch_{}.png'.format(epoch)), normalize=True)
             
             x_t_1 = torch.randn_like(real_data)
             fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1, T, args)
-            torchvision.utils.save_image(fake_sample, os.path.join(exp_path, 'sample_discrete_epoch_{}.png'.format(epoch)), normalize=True)
+            torchvision.utils.save_image(fake_sample, os.path.join(sample_dir, 'sample_discrete_epoch_{}.png'.format(epoch)), normalize=True)
             
             if args.save_content:
                 if epoch % args.save_content_every == 0:
-                    print('Saving content.')
+                    print('Saving content ...')
                     content = {'epoch': epoch + 1, 'global_step': global_step, 'args': args,
                                'netG_dict': netG.state_dict(), 'optimizerG': optimizerG.state_dict(),
                                'schedulerG': schedulerG.state_dict(), 'netD_dict': netD.state_dict(),
                                'optimizerD': optimizerD.state_dict(), 'schedulerD': schedulerD.state_dict()}
                     
-                    torch.save(content, os.path.join(exp_path, 'content.pth'))
+                    torch.save(content, os.path.join(saved_pth, 'content.pth'))
                 
             if epoch % args.save_ckpt_every == 0:
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
                     
-                torch.save(netG.state_dict(), os.path.join(exp_path, 'netG_{}.pth'.format(epoch)))
+                torch.save(netG.state_dict(), os.path.join(saved_pth, 'netG_{}.pth'.format(epoch)))
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
             
@@ -469,7 +479,7 @@ def init_processes(rank, size, fn, args):
     #dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
     fn(rank, gpu, args)
     #dist.barrier()
-    cleanup()  
+    #cleanup()  
 
 def cleanup():
     dist.destroy_process_group()    
