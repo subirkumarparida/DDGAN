@@ -17,7 +17,7 @@ import torch.optim as optim
 
 import torchvision
 import torchvision.transforms as transforms
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import ImageFolder, CIFAR10
 from datasets_prep.lsun import LSUN
 from datasets_prep.stackmnist_data import StackedMNIST, _data_transforms_stacked_mnist
 #from datasets_prep.lmdb_datasets import LMDBDataset
@@ -493,6 +493,7 @@ def cleanup():
     dist.destroy_process_group()    
 #%%
 if __name__ == '__main__':
+    torch.multiprocessing.set_start_method('spawn')
     parser = argparse.ArgumentParser('ddgan parameters')
     parser.add_argument('--seed', type=int, default=1024,
                         help='seed used for initialization')
