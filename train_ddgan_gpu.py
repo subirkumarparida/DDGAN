@@ -243,7 +243,7 @@ def train(rank, gpu, args):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
             ])
-        dataset = ImageFolder(root='./data/fairface', transform=train_transform)
+        dataset = ImageFolder(root='./data/fairface224_imgs/train', transform=train_transform)
     
     
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
