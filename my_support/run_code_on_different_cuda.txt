@@ -1,0 +1,31 @@
+Method 1:
+---------
+Run the program by:
+
+CUDA_VISIBLE_DEVICES=2 python3 test_ddgan.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2  --epoch_id 550
+
+Contents of test_ddgan.py:
+
+device = 'cuda:0'
+
+OR
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+
+Method 2:
+---------
+Run the program by:
+
+python3 test_ddgan.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2  --epoch_id 550
+
+Contents of test_ddgan.py:
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '2' #before import torch
+
+device = 'cuda:0'
+
+OR
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
