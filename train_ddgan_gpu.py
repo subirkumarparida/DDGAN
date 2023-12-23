@@ -6,27 +6,26 @@
 # ---------------------------------------------------------------
 
 
+import os
 import argparse
-import torch
 import numpy as np
 
-import os
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import torchvision
 
+import torchvision
 import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10
 from datasets_prep.lsun import LSUN
 from datasets_prep.stackmnist_data import StackedMNIST, _data_transforms_stacked_mnist
-from datasets_prep.lmdb_datasets import LMDBDataset
-
+#from datasets_prep.lmdb_datasets import LMDBDataset
 
 from torch.multiprocessing import Process
 import torch.distributed as dist
 import shutil
+
 
 def copy_source(file, output_dir):
     shutil.copyfile(file, os.path.join(output_dir, os.path.basename(file)))
@@ -226,8 +225,7 @@ def train(rank, gpu, args):
         train_data = LSUN(root='/datasets/LSUN/', classes=['church_outdoor_train'], transform=train_transform)
         subset = list(range(0, 120000))
         dataset = torch.utils.data.Subset(train_data, subset)
-      
-    
+
     elif args.dataset == 'celeba_256':
         train_transform = transforms.Compose([
                 transforms.Resize(args.image_size),
@@ -235,8 +233,17 @@ def train(rank, gpu, args):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
             ])
-        dataset = LMDBDataset(root='/datasets/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
-      
+        #dataset = LMDBDataset(root='./data/celeba-lmdb/', name='celeba', train=True, transform=train_transform)
+        dataset = ImageFolder(root='./data/celebahq256_imgs/train', transform=train_transform)
+
+    elif args.dataset == 'fairface_224':
+        train_transform = transforms.Compose([
+                transforms.Resize(args.image_size),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
+            ])
+        dataset = ImageFolder(root='./data/fairface', transform=train_transform)
     
     
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
@@ -276,7 +283,6 @@ def train(rank, gpu, args):
     schedulerD = torch.optim.lr_scheduler.CosineAnnealingLR(optimizerD, args.num_epoch, eta_min=1e-5)
     
     
-    
     #ddp
     netG = nn.parallel.DistributedDataParallel(netG, device_ids=[gpu])
     netD = nn.parallel.DistributedDataParallel(netD, device_ids=[gpu])
@@ -298,7 +304,7 @@ def train(rank, gpu, args):
     T = get_time_schedule(args, device)
     
     if args.resume:
-        checkpoint_file = os.path.join(exp_path, 'content.pth')
+        checkpoint_file = os.path.join(exp_path, 'saved_pth/content.pth')
         checkpoint = torch.load(checkpoint_file, map_location=device)
         init_epoch = checkpoint['epoch']
         epoch = init_epoch
@@ -318,6 +324,19 @@ def train(rank, gpu, args):
         global_step, epoch, init_epoch = 0, 0, 0
     
     
+    saved_pth = os.path.join(exp_path, 'saved_pth')
+    if not os.path.exists(saved_pth):
+        os.makedirs(saved_pth)
+        
+    sample_dir = os.path.join(exp_path, 'gen_sample')
+    if not os.path.exists(sample_dir):
+        os.makedirs(sample_dir)
+        
+    xpos_dir = os.path.join(exp_path, 'xpos')
+    if not os.path.exists(xpos_dir):
+        os.makedirs(xpos_dir)
+
+
     for epoch in range(init_epoch, args.num_epoch+1):
         train_sampler.set_epoch(epoch)
        
@@ -406,7 +425,6 @@ def train(rank, gpu, args):
             latent_z = torch.randn(batch_size, nz,device=device)
             
             
-                
            
             x_0_predict = netG(x_tp1.detach(), t, latent_z)
             x_pos_sample = sample_posterior(pos_coeff, x_0_predict, x_tp1, t)
@@ -425,7 +443,7 @@ def train(rank, gpu, args):
             global_step += 1
             if iteration % 100 == 0:
                 if rank == 0:
-                    print('epoch {} iteration{}, G Loss: {}, D Loss: {}'.format(epoch,iteration, errG.item(), errD.item()))
+                    print('epoch {} iteration {}, G Loss: {}, D Loss: {}'.format(epoch, iteration, errG.item(), errD.item()))
         
         if not args.no_lr_decay:
             
@@ -434,27 +452,27 @@ def train(rank, gpu, args):
         
         if rank == 0:
             if epoch % 10 == 0:
-                torchvision.utils.save_image(x_pos_sample, os.path.join(exp_path, 'xpos_epoch_{}.png'.format(epoch)), normalize=True)
+                torchvision.utils.save_image(x_pos_sample, os.path.join(xpos_dir, 'xpos_epoch_{}.png'.format(epoch)), normalize=True)
             
             x_t_1 = torch.randn_like(real_data)
             fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1, T, args)
-            torchvision.utils.save_image(fake_sample, os.path.join(exp_path, 'sample_discrete_epoch_{}.png'.format(epoch)), normalize=True)
+            torchvision.utils.save_image(fake_sample, os.path.join(sample_dir, 'sample_discrete_epoch_{}.png'.format(epoch)), normalize=True)
             
             if args.save_content:
                 if epoch % args.save_content_every == 0:
-                    print('Saving content.')
+                    print('Saving content ...')
                     content = {'epoch': epoch + 1, 'global_step': global_step, 'args': args,
                                'netG_dict': netG.state_dict(), 'optimizerG': optimizerG.state_dict(),
                                'schedulerG': schedulerG.state_dict(), 'netD_dict': netD.state_dict(),
                                'optimizerD': optimizerD.state_dict(), 'schedulerD': schedulerD.state_dict()}
                     
-                    torch.save(content, os.path.join(exp_path, 'content.pth'))
+                    torch.save(content, os.path.join(saved_pth, 'content.pth'))
                 
             if epoch % args.save_ckpt_every == 0:
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
                     
-                torch.save(netG.state_dict(), os.path.join(exp_path, 'netG_{}.pth'.format(epoch)))
+                torch.save(netG.state_dict(), os.path.join(saved_pth, 'netG_{}.pth'.format(epoch)))
                 if args.use_ema:
                     optimizerG.swap_parameters_with_ema(store_params_in_ema=True)
             
@@ -560,13 +578,13 @@ if __name__ == '__main__':
                         help='lazy regulariation.')
 
     parser.add_argument('--save_content', action='store_true',default=False)
-    parser.add_argument('--save_content_every', type=int, default=50, help='save content for resuming every x epochs')
+    parser.add_argument('--save_content_every', type=int, default=10, help='save content for resuming every x epochs')
     parser.add_argument('--save_ckpt_every', type=int, default=25, help='save ckpt every x epochs')
    
     ###ddp
     parser.add_argument('--num_proc_node', type=int, default=1,
                         help='The number of nodes in multi node env.')
-    parser.add_argument('--num_process_per_node', type=int, default=3,
+    parser.add_argument('--num_process_per_node', type=int, default=1,
                         help='number of gpus')
     parser.add_argument('--node_rank', type=int, default=0,
                         help='The index of node.')
@@ -598,5 +616,3 @@ if __name__ == '__main__':
         print('starting in debug mode')
         
         init_processes(0, size, train, args)
-   
-                
