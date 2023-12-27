@@ -9,6 +9,11 @@ python3 train_ddgan.py --dataset cifar10 --exp ddgan_cifar10_exp1 --num_channels
 ```
 python3 test_ddgan.py --dataset cifar10 --exp ddgan_cifar10_exp1 --num_channels 3 --num_channels_dae 128 --num_timesteps 4 --num_res_blocks 2 --nz 100 --z_emb_dim 256 --n_mlp 4 --ch_mult 1 2 2 2 --epoch_id 1200
 ```
+
+##### Train on CELEBA-HQ MULTI-GPU
+```
+python3 train_ddgan_gpu.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp_mgpu --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --num_process_per_node 2 --batch_size 50
+```
 ##### Train on CELEBA-HQ
 ```
 python3 train_ddgan.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --batch_size 4 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content
@@ -17,17 +22,18 @@ python3 train_ddgan.py --dataset celeba_256 --image_size 256 --exp ddgan_celebah
 ```
 python3 test_ddgan.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2  --epoch_id 550
 ```
-##### Train on CELEBA-HQ MULTI-GPU
+
+##### Train on FairFace_224 MULTI-GPU
 ```
-python3 train_ddgan_gpu.py --dataset celeba_256 --image_size 256 --exp ddgan_celebahq_exp_mgpu --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --num_process_per_node 2 --batch_size 50
+python train_ddgan_gpu.py --dataset fairface_224 --image_size 224 --exp ddgan_fairface_exp_mgpu --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --num_process_per_node 2 --batch_size 40
 ```
 ##### Train on FairFace_224
 ```
 python3 train_ddgan.py --dataset fairface_224 --image_size 224 --exp ddgan_fairface_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --batch_size 40
 ```
-##### Train on FairFace_224 MULTI-GPU
+##### Test on FairFace_224
 ```
-python train_ddgan_gpu.py --dataset fairface_224 --image_size 224 --exp ddgan_fairface_exp_mgpu --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2 --num_epoch 800 --ngf 64 --embedding_type positional --use_ema --r1_gamma 2. --z_emb_dim 256 --lr_d 1e-4 --lr_g 2e-4 --lazy_reg 10 --save_content --num_process_per_node 2 --batch_size 40
+python test_ddgan.py --dataset fairface_224 --image_size 224 --exp ddgan_fairface_exp1 --num_channels 3 --num_channels_dae 64 --ch_mult 1 1 2 2 4 4 --num_timesteps 2 --num_res_blocks 2  --epoch_id 100
 ```
 
 # Official PyTorch implementation of "Tackling the Generative Learning Trilemma with Denoising Diffusion GANs" [(ICLR 2022 Spotlight Paper)](https://arxiv.org/abs/2112.07804) #
