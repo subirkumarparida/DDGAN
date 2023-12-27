@@ -138,6 +138,8 @@ def sample_and_test(args):
         real_img_dir = 'pytorch_fid/celebahq_stat.npy'
     elif args.dataset == 'lsun':
         real_img_dir = 'pytorch_fid/lsun_church_stat.npy'
+    elif args.dataset == 'fairface_224':
+        real_img_dir = '/home/barc/Desktop/subir/datasets/fairface/val/'
     else:
         real_img_dir = args.real_img_dir
     
@@ -145,12 +147,22 @@ def sample_and_test(args):
 
     
     netG = NCSNpp(args).to(device)
-    ckpt = torch.load('./saved_info/dd_gan/{}/{}/netG_{}.pth'.format(args.dataset, args.exp, args.epoch_id), map_location=device)
     
+    ckpt = torch.load('./saved_info/dd_gan/{}/{}/netG_{}.pth'.format(args.dataset, args.exp, args.epoch_id), map_location=device)
     #loading weights from ddp in single gpu
     for key in list(ckpt.keys()):
         ckpt[key[7:]] = ckpt.pop(key)
     netG.load_state_dict(ckpt)
+    netG.eval()
+    
+    #------ OR
+    ckpt = torch.load('./saved_info/dd_gan/{}/{}/content.pth'.format(args.dataset, args.exp))
+    saved_epoch = ckpt['epoch']
+    print(saved_epoch)
+    #loading weights from ddp in single gpu
+    for key in list(ckpt['netG_dict'].keys()):
+        ckpt['netG_dict'][key[7:]] = ckpt['netG_dict'].pop(key)
+    netG.load_state_dict(ckpt['netG_dict'])
     netG.eval()
     
     
@@ -194,8 +206,6 @@ def sample_and_test(args):
 
     
     
-            
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('ddgan parameters')
     parser.add_argument('--seed', type=int, default=1024,
