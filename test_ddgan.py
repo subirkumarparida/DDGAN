@@ -4,12 +4,13 @@
 # This work is licensed under the NVIDIA Source Code License
 # for Denoising Diffusion GAN. To view a copy of this license, see the LICENSE file.
 # ---------------------------------------------------------------
+import os
 import argparse
-import torch
 import numpy as np
 
-import os
+#
 
+import torch
 import torchvision
 from score_sde.models.ncsnpp_generator_adagn import NCSNpp
 from pytorch_fid.fid_score import calculate_fid_given_paths
@@ -139,7 +140,7 @@ def sample_and_test(args):
     elif args.dataset == 'lsun':
         real_img_dir = 'pytorch_fid/lsun_church_stat.npy'
     elif args.dataset == 'fairface_224':
-        real_img_dir = '/home/barc/Desktop/subir/datasets/fairface/val/'
+        real_img_dir = './data/fairface224_imgs/train/train/'
     else:
         real_img_dir = args.real_img_dir
     
@@ -148,20 +149,21 @@ def sample_and_test(args):
     
     netG = NCSNpp(args).to(device)
     
-    ckpt = torch.load('./saved_info/dd_gan/{}/{}/netG_{}.pth'.format(args.dataset, args.exp, args.epoch_id), map_location=device)
+    #ckpt = torch.load('./saved_info/dd_gan/{}/{}/saved_pth/netG_{}.pth'.format(args.dataset, args.exp, args.epoch_id), map_location=device)
+    #saved_epoch = args.epoch_id
     #loading weights from ddp in single gpu
-    for key in list(ckpt.keys()):
-        ckpt[key[7:]] = ckpt.pop(key)
-    netG.load_state_dict(ckpt)
-    netG.eval()
+    #for key in list(ckpt.keys()):
+    #    ckpt[key[7:]] = ckpt.pop(key)
+    #netG.load_state_dict(ckpt)
+    #netG.eval()
     
     #------ OR
-    ckpt = torch.load('./saved_info/dd_gan/{}/{}/content.pth'.format(args.dataset, args.exp))
+    ckpt = torch.load('./saved_info/dd_gan/{}/{}/saved_pth/content.pth'.format(args.dataset, args.exp))
     saved_epoch = ckpt['epoch']
     print(saved_epoch)
     #loading weights from ddp in single gpu
-    for key in list(ckpt['netG_dict'].keys()):
-        ckpt['netG_dict'][key[7:]] = ckpt['netG_dict'].pop(key)
+    #for key in list(ckpt['netG_dict'].keys()):
+    #   ckpt['netG_dict'][key[7:]] = ckpt['netG_dict'].pop(key)
     netG.load_state_dict(ckpt['netG_dict'])
     netG.eval()
     
@@ -169,10 +171,10 @@ def sample_and_test(args):
     T = get_time_schedule(args, device)
     
     pos_coeff = Posterior_Coefficients(args, device)
-        
-    iters_needed = 3000 // args.batch_size
     
-    save_dir = "./generated_samples/{}".format(args.dataset)
+    iters_needed = 5000 // args.batch_size
+    
+    save_dir = "./generated_samples_fairface_bal_ep={}/{}".format(saved_epoch, args.dataset)
     
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -190,14 +192,14 @@ def sample_and_test(args):
                    #print("j: ", j)
                    #print(x.shape)
                    index = i * args.batch_size + j 
-                   torchvision.utils.save_image(x, './generated_samples/{}/{}.jpg'.format(args.dataset, index))
+                   torchvision.utils.save_image(x, './generated_samples_fairface_bal_ep={}/{}/{}.jpg'.format(saved_epoch, args.dataset, index))
                print('generating batch ', i)
         
         paths = [save_dir, real_img_dir]
     
         kwargs = {'batch_size': 100, 'device': device, 'dims': 2048}
         fid = calculate_fid_given_paths(paths=paths, **kwargs)
-        print('FID = {}'.format(fid))
+        print('\n \n FID = {} \n'.format(fid))
     else:
         x_t_1 = torch.randn(args.batch_size, args.num_channels,args.image_size, args.image_size).to(device)
         fake_sample = sample_from_model(pos_coeff, netG, args.num_timesteps, x_t_1,T,  args)
@@ -280,11 +282,5 @@ if __name__ == '__main__':
         
 
 
-
-   
     args = parser.parse_args()
-    
     sample_and_test(args)
-    
-   
-                
