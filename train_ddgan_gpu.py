@@ -243,7 +243,7 @@ def train(rank, gpu, args):
                 transforms.ToTensor(),
                 transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))
             ])
-        dataset = ImageFolder(root='./data/fairface224_imgs/train', transform=train_transform)
+        dataset = ImageFolder(root='../../datasets/fairface/train', transform=train_transform)
     
     
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
@@ -297,6 +297,18 @@ def train(rank, gpu, args):
             os.makedirs(exp_path)
             copy_source(__file__, exp_path)
             shutil.copytree('score_sde/models', os.path.join(exp_path, 'score_sde/models'))
+
+        saved_pth = os.path.join(exp_path, 'saved_pth')
+        if not os.path.exists(saved_pth):
+            os.makedirs(saved_pth)
+
+        sample_dir = os.path.join(exp_path, 'gen_sample')
+        if not os.path.exists(sample_dir):
+            os.makedirs(sample_dir)
+
+        xpos_dir = os.path.join(exp_path, 'xpos')
+        if not os.path.exists(xpos_dir):
+            os.makedirs(xpos_dir)
     
     
     coeff = Diffusion_Coefficients(args, device)
@@ -323,19 +335,6 @@ def train(rank, gpu, args):
     else:
         global_step, epoch, init_epoch = 0, 0, 0
     
-    
-    saved_pth = os.path.join(exp_path, 'saved_pth')
-    if not os.path.exists(saved_pth):
-        os.makedirs(saved_pth)
-        
-    sample_dir = os.path.join(exp_path, 'gen_sample')
-    if not os.path.exists(sample_dir):
-        os.makedirs(sample_dir)
-        
-    xpos_dir = os.path.join(exp_path, 'xpos')
-    if not os.path.exists(xpos_dir):
-        os.makedirs(xpos_dir)
-
 
     for epoch in range(init_epoch, args.num_epoch+1):
         train_sampler.set_epoch(epoch)
@@ -481,7 +480,7 @@ def train(rank, gpu, args):
 def init_processes(rank, size, fn, args):
     """ Initialize the distributed environment. """
     os.environ['MASTER_ADDR'] = args.master_address
-    os.environ['MASTER_PORT'] = '6020'
+    #os.environ['MASTER_PORT'] = '6020'
     torch.cuda.set_device(args.local_rank)
     gpu = args.local_rank
     dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=size)
@@ -585,7 +584,7 @@ if __name__ == '__main__':
     ###ddp
     parser.add_argument('--num_proc_node', type=int, default=1,
                         help='The number of nodes in multi node env.')
-    parser.add_argument('--num_process_per_node', type=int, default=1,
+    parser.add_argument('--num_process_per_node', type=int, default=4,
                         help='number of gpus')
     parser.add_argument('--node_rank', type=int, default=0,
                         help='The index of node.')
